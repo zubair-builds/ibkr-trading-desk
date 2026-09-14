@@ -8,7 +8,8 @@ import asyncio
 from pathlib import Path
 from collections import deque
 from dataclasses import dataclass
-from ib_insync import IB, Stock, MarketOrder, LimitOrder, StopOrder, Trade
+from typing import Any, Dict, List, Optional
+from ib_insync import IB, Stock, Order, MarketOrder, LimitOrder, StopOrder, Trade
 
 
 
@@ -532,6 +533,16 @@ class IBService:
                 }
                 try:
                     self._ib.cancelMktData(contract)
+                    
+                    # FIX: ib-insync keeps Ticker objects in memory even after cancellation.
+                    # We must manually scrub them to prevent memory leaks, especially when
+                    # polled frequently by the autotrader.
+                    if hasattr(self._ib, "wrapper") and getattr(self._ib.wrapper, "tickers", None) is not None:
+                        req_ids = [k for k, v in self._ib.wrapper.reqId2Ticker.items() if v.contract == contract]
+                        for rid in req_ids:
+                            self._ib.wrapper.reqId2Ticker.pop(rid, None)
+                        self._ib.wrapper.tickers.pop(id(contract), None)
+                        
                 except Exception as e:
                     logger.debug("Error cancelling mkt data: %s", e)
                 return quote_dict
@@ -645,6 +656,11 @@ class IBService:
                     import asyncio
                     async def _unsub():
                         self._ib.cancelMktData(contract)
+                        if hasattr(self._ib, "wrapper") and getattr(self._ib.wrapper, "tickers", None) is not None:
+                            req_ids = [k for k, v in self._ib.wrapper.reqId2Ticker.items() if v.contract == contract]
+                            for rid in req_ids:
+                                self._ib.wrapper.reqId2Ticker.pop(rid, None)
+                            self._ib.wrapper.tickers.pop(id(contract), None)
                     if self._loop and self._loop.is_running():
                         asyncio.run_coroutine_threadsafe(_unsub(), self._loop)
 
@@ -836,7 +852,7 @@ class IBService:
 
     def place_order(
         self, symbol: str, action: str, quantity: float, order_type: str = "MKT", lmt_price: Optional[float] = None, outside_rth: bool = False,
-        take_profit_pct: Optional[float] = None, stop_loss_pct: Optional[float] = None
+        take_profit_pct: Optional[float] = None, stop_loss_pct: Optional[float] = None, transmit: bool = True
     ) -> Dict[str, Any]:
         """
         Place a buy or sell order after performing risk checks.
@@ -890,6 +906,7 @@ class IBService:
 
         contract = Stock(symbol_upper, "SMART", "USD")
         
+        order: Order
         if order_type.upper() == "MKT":
             if outside_rth:
                 raise ValueError("Extended hours trading requires a Limit (LMT) order")
@@ -934,7 +951,7 @@ class IBService:
                     tp_order.transmit = False  # Transmit false unless it's the last order
                     # If there's no stop loss, this is the last one
                     if stop_loss_pct is None:
-                        tp_order.transmit = True
+                        tp_order.transmit = transmit
                     self._ib.placeOrder(resolved_contract, tp_order)
                     
                 if stop_loss_pct is not None:
@@ -944,12 +961,13 @@ class IBService:
                     sl_order = StopOrder(sl_action, quantity, sl_price)
                     sl_order.orderId = self._ib.client.getReqId()
                     sl_order.parentId = parent_id
-                    sl_order.transmit = True # Last order transmits
+                    sl_order.transmit = transmit # Last order transmits
                     self._ib.placeOrder(resolved_contract, sl_order)
                 
                 # Fetch the trade object for the parent
                 trade = next((t for t in self._ib.trades() if getattr(t.order, "orderId", None) == parent_id), None)
             else:
+                order.transmit = transmit
                 trade = self._ib.placeOrder(resolved_contract, order)
             
             

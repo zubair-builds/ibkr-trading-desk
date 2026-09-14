@@ -16,6 +16,7 @@ class TradeSignal(BaseModel):
     action: str  # e.g., BUY, SELL, HOLD
     quantity: float
     reasoning: str
+    draft_order_status: Optional[str] = None
 
 def analyze_market(ib_service: IBService) -> TradeSignal:
     """

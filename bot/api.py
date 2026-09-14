@@ -272,6 +272,25 @@ def run_ai_analysis(ib_service: IBService = Depends(get_ib_service)):
     """
     try:
         signal = analyze_market(ib_service)
+        
+        if signal.action in ["BUY", "SELL"] and signal.quantity > 0:
+            tp_pct = 0.10 if signal.action == "BUY" else None
+            sl_pct = 0.05 if signal.action == "BUY" else None
+            try:
+                res = ib_service.place_order(
+                    symbol=signal.symbol,
+                    action=signal.action,
+                    quantity=signal.quantity,
+                    order_type="MKT",
+                    take_profit_pct=tp_pct,
+                    stop_loss_pct=sl_pct,
+                    transmit=False
+                )
+                signal.draft_order_status = f"Draft Order Submitted ({res.get('status', 'Unknown')})"
+            except Exception as e:
+                logger.warning(f"Draft order failed: {e}")
+                signal.draft_order_status = f"Draft Order Failed: {e}"
+
         return signal
     except Exception as e:
         logger.exception("POST /ai/analyze error: %s", e)

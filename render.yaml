@@ -14,3 +14,5 @@ services:
         sync: false
       - key: DASHBOARD_PASS
         sync: false
+      - key: TWS_MAX_HEAP
+        value: 256m

@@ -3,14 +3,7 @@
 ## 🔴 ACTIVE EPIC: Full Automation & Analytics
 **Goal:** Allow the bot to execute trades without human intervention and monitor its own performance.
 
-- [x] **Task 3.1A: Fix AI Context Data Mapping**
-  - **DoD**: The AI currently thinks there are no available funds despite the dashboard showing $1M+ in cash. We must fix `ai_context.py` to ensure `AvailableFunds` and `BuyingPower` are correctly parsed and explicitly understood by Gemini.
-- [x] **Task 3.1B: Manual AI Test Button**
-  - **DoD**: Add a "Test AI Analysis" button to the Autopilot panel. When clicked, it triggers the AI and displays the resulting `TradeSignal` (symbol, action, reasoning) *without* actually placing the order.
-- [x] **Task 3.1C: AI Harness & Pre-Trade Guard Rails**
-  - **DoD**: Implement strict guard rails (e.g., maximum order value, maximum open positions) that intercept the AI's signal and automatically block it if it violates risk parameters.
-- [ ] **Task 3.1D: Draft Orders for Manual Testing**
-  - **DoD**: Modify the Manual AI Test to submit the AI's signal to IBKR as a Draft order (`transmit=False`) with its bracket orders, so the user can manually review and transmit it in TWS.
+
 - [ ] **Task 3.1E: Targeted AI Analysis (Ticker Selection)**
   - **DoD**: Add an input field/dropdown to the Manual Test UI so the user can force the AI to analyze a *specific* ticker (e.g., TSLA) rather than picking one from the entire portfolio context.
 - [ ] **Task 3.2: Notifications & Alerting (Discord/Slack)**

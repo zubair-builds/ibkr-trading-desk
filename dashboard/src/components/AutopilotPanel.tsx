@@ -200,6 +200,17 @@ const AutopilotPanel: React.FC = () => {
             <div style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.8)' }}>
               "{manualResult.reasoning}"
             </div>
+            {manualResult.draft_order_status && (
+              <div style={{ 
+                marginTop: '12px', 
+                padding: '8px', 
+                background: manualResult.draft_order_status.includes('Failed') ? 'rgba(231,76,60,0.1)' : 'rgba(46,204,113,0.1)',
+                borderLeft: `3px solid ${manualResult.draft_order_status.includes('Failed') ? 'var(--color-loss)' : 'var(--color-profit)'}`,
+                fontSize: '0.85rem'
+              }}>
+                <strong>Draft Status:</strong> {manualResult.draft_order_status}
+              </div>
+            )}
           </div>
         )}
       </div>

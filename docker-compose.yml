@@ -12,6 +12,7 @@ services:
       - ALLOW_BLIND_TRADING=yes
       - AUTO_RESTART_TIME=03:00
       - RELOGIN_AFTER_TWOFA_TIMEOUT=no
+      - TWS_MAX_HEAP=256m
       
       # Bot configuration
       - CLIENT_ID=1
