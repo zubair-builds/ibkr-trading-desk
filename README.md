@@ -38,8 +38,8 @@ More detail: [docs/architecture.md](docs/architecture.md).
 Needs Docker and an IBKR paper (or live) account.
 
 ```bash
-git clone https://github.com/zubair-builds/ibkr.git
-cd ibkr
+git clone https://github.com/zubair-builds/ibkr-trading-desk.git
+cd ibkr-trading-desk
 cp .env.example .env
 # set TWS_USERID, TWS_PASSWORD, DASHBOARD_USER, DASHBOARD_PASS
 docker compose up --build -d
@@ -72,7 +72,6 @@ render.yaml
 - Tests around order placement and reconnect
 - Cancel / modify orders in the UI
 - Structured logs instead of container stdout only
-- Rename this repo to `ibkr-trading-desk` (GitHub Settings; not done from CI)
 
 ## Author
 
