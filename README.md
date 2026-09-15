@@ -1,56 +1,79 @@
-# IBKR Trading Bot & Dashboard
+# IBKR Trading Desk
 
-An "All-in-One" Python-based algorithmic trading bot and React dashboard for Interactive Brokers, powered by `ib-insync` and `FastAPI`.
+Personal trading stack for Interactive Brokers: headless IB Gateway in Docker, a FastAPI + `ib-insync` backend, and a React dashboard served from the same origin.
 
-## 🏗️ Architecture
+Paper mode is the default. This is not a hosted product and not financial advice.
 
-This project is built around a **Single-Container Docker Setup** to make deployment to the cloud (like Render) effortless. 
-- **IB Gateway (Headless)**: Runs securely inside the container.
-- **Python Backend**: FastAPI server communicating locally with the Gateway.
-- **React Dashboard**: Bundled securely inside the Python API and served as static files to eliminate CORS issues and the need for dual-hosting.
+## What it does
 
-## 🚀 Local Development & Setup
+- Runs IB Gateway headless (Xvfb + IBC) in one container
+- REST API for account, positions, history, and orders (`bot/`)
+- Optional autotrade + Gemini helper (`bot/autotrade.py`, `bot/ai_agent.py`)
+- Vite + React dashboard (positions, watchlist, charts) mounted at `:8000`
+- Offline helpers: `ingest.py`, `backtest.py`
+- Render blueprint (`render.yaml`) for a single web service
 
-To run the entire stack (Gateway, Backend API, and Frontend Dashboard), you only need Docker.
+## Stack
 
-### 1. Configuration
-Create or edit the `.env` file in the root of the project with your Interactive Brokers credentials and desired dashboard login:
+| Layer | Choice |
+| --- | --- |
+| Broker | Interactive Brokers Gateway (paper or live) |
+| Broker client | Python, `ib-insync` |
+| API | FastAPI + Uvicorn, HTTP Basic Auth |
+| UI | React 19, Vite, TypeScript, lightweight-charts |
+| Config | `config/settings.yaml`, `.env` |
+| Run | Docker Compose, multi-stage Dockerfile |
+| Deploy | Render (`render.yaml`) |
 
-```env
-TWS_USERID=your_ibkr_username
-TWS_PASSWORD=your_ibkr_password
-TRADING_MODE=paper
-
-DASHBOARD_USER=admin
-DASHBOARD_PASS=admin
+```text
+browser  --Basic Auth-->  FastAPI :8000  -->  static React build
+                                 |
+                                 +--> ib-insync TCP --> IB Gateway --> IBKR
 ```
 
-### 2. Start the Container
+More detail: [docs/architecture.md](docs/architecture.md).
+
+## Setup
+
+Needs Docker and an IBKR paper (or live) account.
+
 ```bash
-docker-compose up -d
+git clone https://github.com/zubair-builds/ibkr.git
+cd ibkr
+cp .env.example .env
+# set TWS_USERID, TWS_PASSWORD, DASHBOARD_USER, DASHBOARD_PASS
+docker compose up --build -d
 ```
-*(If you make changes to the code, use `docker-compose up --build -d` to rebuild).*
 
-### 3. Access the Dashboard
-Once started, the backend and frontend are hosted at:
-- **Dashboard**: [http://localhost:8000](http://localhost:8000)
-- **API Docs (Swagger)**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- Dashboard: [http://localhost:8000](http://localhost:8000)
+- API docs: [http://localhost:8000/docs](http://localhost:8000/docs)
+- Gateway VNC (debug): `:5900` if `VNC_PASSWORD` is set
 
-*Note: You will be prompted for the Basic Auth credentials you set in your `.env` file!*
+`TRADING_MODE=paper` uses gateway port 4004; `live` uses 4003. Keep live credentials out of git. Do not commit `.env`.
 
-## ☁️ Deployment (Render)
+Local UI-only work (API already running): `cd dashboard && npm install && npm run dev`.
 
-This project includes a `render.yaml` configuration file for 1-click deployments to Render.com as a Web Service.
+## Layout
 
-1. Push your repository to GitHub.
-2. Connect your repository to Render via the "Blueprints" tab to apply the `render.yaml` file.
-3. In the Render Dashboard, securely fill in the missing environment variables (`TWS_USERID`, `TWS_PASSWORD`, `DASHBOARD_USER`, `DASHBOARD_PASS`).
+```text
+bot/           FastAPI app, IB service, autotrade, AI helper
+dashboard/     Vite + React UI
+config/        settings.yaml
+scripts/       container entry helpers
+ingest.py      data ingest
+backtest.py    simple backtest
+Dockerfile     gateway + API + built UI
+docker-compose.yml
+render.yaml
+```
 
-Render will automatically pull the container, build it, and host your private IBKR dashboard on the web securely behind Basic Authentication!
+## What I would do next
 
-## 📂 Project Structure
-- `bot/`: Python backend and FastAPI endpoints.
-- `dashboard/`: Vite + React + TypeScript frontend.
-- `config/`: Trading configurations and settings (`settings.yaml`).
-- `scripts/`: Custom initialization scripts for the Docker entrypoint.
-- `render.yaml`: Infrastructure as Code for Render deployment.
+- Tests around order placement and reconnect
+- Cancel / modify orders in the UI
+- Structured logs instead of container stdout only
+- Rename this repo to `ibkr-trading-desk` (GitHub Settings; not done from CI)
+
+## Author
+
+[Syed Zubair Haider](https://github.com/zubair-builds) · [LinkedIn](https://www.linkedin.com/in/syed-zubair-haider/)
