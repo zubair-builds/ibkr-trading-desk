@@ -10,6 +10,7 @@ services:
       - TRADING_MODE=${TRADING_MODE:-paper}
       - VNC_PASSWORD=${VNC_PASSWORD:-password}
       - ALLOW_BLIND_TRADING=yes
+      - READ_ONLY_API=no
       - AUTO_RESTART_TIME=03:00
       - RELOGIN_AFTER_TWOFA_TIMEOUT=no
       - TWS_MAX_HEAP=256m
@@ -27,4 +28,16 @@ services:
     volumes:
       - ./logs:/app/logs
       - ./config:/app/config
+      - ./strategy:/app/strategy
     restart: on-failure
+
+  scheduler:
+    image: ibkr_bot-trading-bot:latest
+    network_mode: "service:trading-bot"
+    depends_on:
+      - trading-bot
+    volumes:
+      - ./strategy:/app/strategy
+    entrypoint: []
+    command: ["python", "-u", "/app/strategy/trend_join/scheduler.py"]
+    restart: unless-stopped

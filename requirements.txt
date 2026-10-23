@@ -8,3 +8,5 @@ pandas
 pyarrow
 requests
 google-genai
+tzdata
+yfinance

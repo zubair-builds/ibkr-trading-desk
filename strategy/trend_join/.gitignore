@@ -1,0 +1,8 @@
+.env
+trades.csv
+logs/
+__pycache__/
+open_positions.json
+open_positions.json.tmp
+safety-check-log.json
+watchlist.txt
